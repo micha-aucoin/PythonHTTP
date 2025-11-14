@@ -39,11 +39,9 @@ class TestHTTPHandler:
         self,
         request_stream: io.BufferedIOBse,
         response_stream: io.BufferedIOBse,
-        client: socket.socket,
     ):
         self.request_stream = request_stream
         self.response_stream = response_stream
-        self.client = client
         self.command = ""
         self.path = ""
         self.data = ""
@@ -193,7 +191,7 @@ class TestTCPServer:
                 logging.info(f"Accepted connection from {addr}")
 
                 # create a file-like object to read/write bytes sent
-                # from the client socket as if we're reading from a file.
+                #   from the client socket as if we're reading from a file.
                 request_stream = conn.makefile("rb")
                 response_stream = conn.makefile("wb")
                 # `<this is similar to socket.recv()/socket.send()>
@@ -201,7 +199,6 @@ class TestTCPServer:
                 self.request_handler(
                     request_stream=request_stream,
                     response_stream=response_stream,
-                    client=conn,
                 )
 
             logging.info(f"Closed connection from {addr}")
@@ -217,11 +214,11 @@ class TestTCPServer:
         self.sock.close()
 
 
-HOST = "127.0.0.1"
-PORT = 8080
-
-with TestTCPServer(
-    socket_address=(HOST, PORT),
-    request_handler=TestHTTPHandler,
-) as server:
-    server.serve_forever()
+if __name__ == "__main__":
+    HOST = "127.0.0.1"
+    PORT = 8080
+    with TestTCPServer(
+        socket_address=(HOST, PORT),
+        request_handler=TestHTTPHandler,
+    ) as server:
+        server.serve_forever()
