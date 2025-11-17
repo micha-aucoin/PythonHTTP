@@ -84,11 +84,14 @@ async def run_echo_client(message: str):
 
 
 async def main():
-    await run_rpc_client({"func_name": "add", "args": [2, 3]})
+    await run_rpc_client({"func_name": "sleep", "args": [5]})
     await asyncio.gather(
-        run_rpc_client({"func_name": "add", "args": [2, 3]}),
-        run_rpc_client({"func_name": "upper", "args": ["hello, world!"]}),
+        run_rpc_client({"func_name": "sleep", "args": [5]}),
+        run_rpc_client({"func_name": "sleep", "args": [5]}),
+        run_rpc_client({"func_name": "sleep", "args": [5]}),
     )
+    await run_rpc_client({"func_name": "sleep", "args": [2]})
+    await run_rpc_client({"func_name": "add", "args": [2, 3]}),
     await run_rpc_client({"func_name": "upper", "args": ["hello, world!"]})
 
     # await asyncio.gather(

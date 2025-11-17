@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import asyncio
+import inspect
 import json
+import time
 
 # from pprint import pprint
 
@@ -28,6 +30,11 @@ def upper(s: str) -> str:
     return s.upper()
 
 
+@register("sleep")
+def sleep(t: int) -> None:
+    time.sleep(t)
+
+
 class RpcServerProtocol(asyncio.Protocol):
     def __init__(self):
         self.transport = None
@@ -39,9 +46,9 @@ class RpcServerProtocol(asyncio.Protocol):
         self.transport = transport
 
     def data_received(self, data):
-        self._buffer = data.decode()
+        # self._buffer = data.decode()
         # accumulation instead of assignment
-        # self._buffer += data.decode()
+        self._buffer += data.decode()
 
         while "\n" in self._buffer:
             line, self._buffer = self._buffer.split("\n", 1)
@@ -49,9 +56,9 @@ class RpcServerProtocol(asyncio.Protocol):
             if not line:
                 continue
             print(f"Received line: {line!r}")
-            self._handle_line(line)
+            asyncio.create_task(self._handle_line(line))
 
-    def _handle_line(self, line: str):
+    async def _handle_line(self, line: str):
         try:
             request = json.loads(line)
             func_name = request.get("func_name")
@@ -59,7 +66,8 @@ class RpcServerProtocol(asyncio.Protocol):
             kwargs = request.get("kwargs", {})
             if func_name not in FUNCTIONS:
                 response = {"error": f"unknown function {func_name!r}"}
-            response = self._execute_function(func_name, *args, **kwargs)
+            else:
+                response = await self._execute_function(func_name, *args, **kwargs)
         except Exception as e:
             response = {"error": f"bad request: {e!r}"}
 
@@ -68,9 +76,15 @@ class RpcServerProtocol(asyncio.Protocol):
         self.transport.write(out.encode())
         self.transport.close()
 
-    def _execute_function(self, func_name, *args, **kwargs):
+    async def _execute_function(self, func_name, *args, **kwargs):
+        if inspect.iscoroutinefunction(FUNCTIONS[func_name]):
+            try:
+                result = await FUNCTIONS[func_name](*args, **kwargs)
+                return {"result": result}
+            except Exception as e:
+                return {"error": repr(e)}
         try:
-            result = FUNCTIONS[func_name](*args, **kwargs)
+            result = await asyncio.to_thread(FUNCTIONS[func_name], *args, **kwargs)
             return {"result": result}
         except Exception as e:
             return {"error": repr(e)}
