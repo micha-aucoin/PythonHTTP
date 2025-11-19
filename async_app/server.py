@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s")
 
 class HttpServerProtocol(asyncio.Protocol):
     def __init__(self):
-
         self.transport = None
         self.request = ""
         self.command = ""
