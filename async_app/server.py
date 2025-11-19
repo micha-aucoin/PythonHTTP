@@ -36,19 +36,10 @@ class HttpServerProtocol(asyncio.Protocol):
         logging.info("Send to client socket")
         if not self._validate_path():
             self._404_not_found()
-            logging.info("Closing the client socket")
-            self.transport.close()
-            return
         if self.command == "POST":
             self._403_forbidden()
-            logging.info("Closing the client socket")
-            self.transport.close()
-            return
         if self.command not in ("GET", "HEAD"):
             self._405_method_not_allowed()
-            logging.info("Closing the client socket")
-            self.transport.close()
-            return
         command = getattr(self, f"handle_{self.command}")
         command()
 
@@ -88,16 +79,25 @@ class HttpServerProtocol(asyncio.Protocol):
         """NOT FOUND"""
         self._write_response_line(404)
         self._write_headers()
+        logging.info("Closing the client socket")
+        self.transport.close()
+        return
 
     def _405_method_not_allowed(self) -> None:
         """METHOD NOT ALLOWED"""
         self._write_response_line(405)
         self._write_headers()
+        logging.info("Closing the client socket")
+        self.transport.close()
+        return
 
     def _403_forbidden(self) -> None:
         """FORBIDDEN"""
         self._write_response_line(403)
         self._write_headers()
+        logging.info("Closing the client socket")
+        self.transport.close()
+        return
 
     def handle_GET(self) -> None:
         """writes headers and the file to the socket"""
